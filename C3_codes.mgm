@@ -1,0 +1,67 @@
+// This function generates the parity-check matrix of 
+// an LDPC code from the incidence structure on the blown up plane
+// given by the linear system C_3 of ellipses with two
+// common conjugated points at infinity.
+
+// These codes are described in the article
+// "Incidence structures from the blown-up plane
+// and LDPC codes". IEEE Trans. Inform. Theory 57(7), 4401-4416, 2011.
+
+//--------------------------------------------------------------
+// INPUTS: The Size q of the base field of the affine plane.
+// OUTPUTS: The sparse matrix.
+//--------------------------------------------------------------
+
+load "Slin.mgm";
+
+function C3code(q)
+	 F:=FiniteField(q);
+	 A2<x,y>:=AffineSpace(F,2);
+
+	 // We should separate two cases: when q even and q odd.
+
+	 if IsEven(q) then
+	    // first, we find an element alpha
+	    // such that	
+	    // T^2+T+alpha is irreducible over F_q.
+
+            M<T>:=PolynomialRing(F,1);
+	    alpha:=Random(F);
+	    while IsIrreducible(T^2+T+alpha) eq false do
+	    	  alpha:=Random(F);
+	    end while;  
+
+    	    // Construt a basis of the set of curves.
+	    LSec:=[x^2+x*y+alpha*y^2,x,y,1];
+	    
+ 	    // The set parametrizing the set of curves.
+	    P3<u,v,w,t>:=ProjectiveSpace(F,3);
+	    R:=Scheme(P3,u);
+	    ParaLS:=RationalPoints(P3) diff RationalPoints(R);
+	    
+	 else 
+	    // find a random element of F which is not a square.
+	    alpha:=Random(F);
+	 
+	    while IsSquare(alpha) do
+	       alpha:=Random(F);
+	    end while;     
+	 
+	    // Construt a basis of the set of curves.
+	    LSec:=[x^2-alpha*y^2,x,y,1];
+
+	    // The set parametrizing the set of curves.
+	    P3<u,v,w,t>:=ProjectiveSpace(F,3);
+	    R:=Scheme(P3,u);
+	    ParaLS:=RationalPoints(P3) diff RationalPoints(R);
+
+	 end if;
+
+	 // Construct the set of possible tangent vectors.
+	 P1<X,Y>:=ProjectiveSpace(F,1);
+	 VectTgts:=RationalPoints(P1);
+
+	 H:=IncidenceSyst(A2,LSec, ParaLS, 2, VectTgts);
+	 
+	 return H;
+end function;

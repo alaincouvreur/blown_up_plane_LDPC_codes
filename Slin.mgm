@@ -1,0 +1,98 @@
+// This program yields the incidence matrix of the affine plane blown up
+// at each rational points with some linear system.
+
+// This function is used in the functions C1code, C2code and C3code.
+
+
+//----------------------------------------------------------
+// INPUTS:  A2: The affine plane A2,
+// 	    LSEC: a sequence of sections generating the linear system,
+// 	    ParaLS: a sequence parametrizing the linear system,
+// 	    d: the degree of a generic section of the linear system
+// 	    VectTgts the set of
+// 	    possible tangent directions, represented as points
+// 	    of the projective line.	
+// OUTPUT:    The incidence matrix, represented as a Sparse Matrix
+//          with entries in F2.
+//----------------------------------------------------------
+   
+
+function IncidenceSyst(A2,LSec, ParaLS, d ,VectTgts)
+	 	 
+         F:=BaseField(A2);
+	 Fp:=PrimeField(F);
+	 F2:=FiniteField(2);
+	 Paff:=RationalPoints(A2);
+	 aa:=#Paff;	
+	 t:=#VectTgts;
+	 dim:=#LSec;
+
+
+// The length of the code will be:	 
+ 
+	 n:=t*aa;
+	 
+// To describe tangent vectors, we need to describe
+// the projective line
+	 
+	 P1:=ProjectiveSpace(F,1);
+	 VectTgts:=[P1!Coordinates(a) : a in VectTgts];
+	 
+
+// We construct the sequence of the rows of the Parity-check
+// matrix.
+// First we compute the words corresponding to the conics.
+// Then, the words corresponding to the exceptional divisors.
+
+	 LL:=[];	 
+	 ii:=1;
+
+	 for p in ParaLS do
+	     a:=Coordinates(p);
+	     Eq:=&+[a[i]*LSec[i]: i in {1..dim}];	
+	     Curve:=Scheme(A2, Eq);
+	   
+// For conics, the constraint IsNonSingular is nonnecessary
+// it can be useful if we generalize this function
+// to other linear systems.	     
+	    
+	     if IsNonSingular(Curve) and IsIrreducible(Curve)
+	        and Degree(Curve) eq d then
+	     	  R:=RationalPoints(Curve);
+	     	  for P in R do
+	     	     PP:=A2!P;
+		     s:=Index(Paff,PP);
+
+// Compute the tangent vector of
+// Curve at P.
+
+		     cc:=Coordinates(P);
+		     fx:=Derivative(Eq,1);
+		     fy:=Derivative(Eq,2);
+		     Tgt:=P1![-Evaluate(fy,cc),Evaluate(fx,cc)];
+		     b:=Index(VectTgts,Tgt);
+		     
+		     Append(~LL, <ii,t*(s-1)+b,F2!1>);		     
+		     
+	     	  end for;
+		ii+:=1;
+
+
+	     end if;
+	     
+	 end for;	 
+
+// Now, consider the list of exceptional divisors
+
+	 for p in Paff do
+	     s:=Index(Paff,p);
+	     for m:=1 to t do
+	     	 Append(~LL,<ii,t*(s-1)+m, F2!1>);
+	     end for;
+	     ii+:=1;
+	 end for;
+	    
+	 M:=SparseMatrix(ii-1,n,LL);
+
+return M;
+end function;
